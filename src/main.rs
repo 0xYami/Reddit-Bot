@@ -1,9 +1,11 @@
 use reqwest;
 use serde_json;
 use serde_json::json;
+use std::env;
 
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
+    let args: Vec<_> = env::args().collect();
     let client = reqwest::Client::new();
     
     let response = client
@@ -15,12 +17,19 @@ async fn main() -> Result<(), reqwest::Error> {
     let content = response.text().await?;
 
     let json = to_json(content);
+    
+     let pretty_print_data = args.get(1).map(|arg| arg == "pretty").unwrap_or(false);
 
-    
-    // println!("{:#?}", get_post_data(&json["data"]["children"][0]["data"]));
-    
-    for i in 0..json["data"]["children"].as_array().unwrap().len() {
-        println!("{:#?}", get_post_data(&json["data"]["children"][i]["data"]));
+    if pretty_print_data {
+        let mut i = 0;
+
+        for post in json["data"]["children"].as_array().unwrap() {
+            println!("Post #{}", i);
+            println!("{:#?}", get_post_data(&post["data"]));
+            i += 1;
+        }
+    } else {
+        println!("{}", serde_json::to_string(&json).unwrap());
     }
     Ok(())
 }

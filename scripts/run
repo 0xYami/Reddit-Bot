@@ -1,3 +1,13 @@
+#!/bin/bash
+
+# Build the Rust project with Cargo in release mode
 cargo build --release
 
-./target/release/reddit_bot
+# Check if the build was successful
+if [ $? -eq 0 ]; then
+    # Run the binary with any arguments
+    ./target/release/reddit_bot "$@"
+else
+    echo "Build failed. Please check for errors."
+fi
+ 
