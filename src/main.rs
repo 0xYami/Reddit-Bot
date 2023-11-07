@@ -29,7 +29,7 @@ async fn main() -> Result<(), reqwest::Error> {
             i += 1;
         }
     } else {
-        println!("{}", serde_json::to_string(&json).unwrap());
+        println!("{:#?}", json);
     }
     Ok(())
 }
