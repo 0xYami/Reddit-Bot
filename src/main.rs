@@ -2,11 +2,20 @@ use reqwest;
 use serde_json;
 use serde_json::json;
 use std::env;
-
-// Import a yml parser
 use serde_yaml;
 
-const HELP_MESSAGE: &str = "Usage: %path -- [pretty|raw|help]";
+const ILLEGAL_CHARS: [&str; 8] = [
+    "!",
+    "#",
+    "$",
+    "^",
+    "&",
+    "*",
+    "(",
+    ")"
+];
+
+const HELP_MESSAGE: &str = "Usage: %path %prefix [pretty|raw|help]";
 
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
@@ -18,7 +27,7 @@ async fn main() -> Result<(), reqwest::Error> {
     let config: serde_yaml::Value = serde_yaml::from_reader(config).expect("Error parsing config.yml");
 
     let url = config["url"].as_str().unwrap();
-
+    let cmd_prefix = config["cmd_prefix"].as_str().unwrap();
     
     let response = client
         .get(url)
@@ -30,26 +39,38 @@ async fn main() -> Result<(), reqwest::Error> {
 
     let json = to_json(content);
 
-    let zeroarg = args.get(0).map(|arg| arg.as_str());
+    let zeroarg = args.get(0).map(|s| s.as_str());
 
-    match args.get(1).map(|arg| arg.as_str()) {
-        Some("--pretty") => {
+    for arg in args.iter() {
+        for illegal_char in ILLEGAL_CHARS.iter() {
+            if arg.contains(illegal_char) {
+                println!("Error: Illegal character in argument: {}", illegal_char);
+                std::process::exit(1);
+            }
+        }
+    }
+
+
+
+    match args.get(1).as_deref() {
+        Some(cmd) if cmd == &format!("{}pretty", cmd_prefix) => {
             let mut i = 1;
-
             for post in json["data"]["children"].as_array().unwrap() {
                 println!("Post #{}", i);
+                println!();
                 println!("{:#?}", get_post_data(&post["data"]));
+                println!();
                 i += 1;
             }
         }
-        Some("--raw") => {
+        Some(cmd) if cmd == &format!("{}raw", cmd_prefix) => {
             println!("{:#?}", json);
         }
-        Some("--help")  => {
-            println!("{}", HELP_MESSAGE.replace("%path", zeroarg.unwrap()));
+        Some(cmd) if cmd == &format!("{}help", cmd_prefix) => {
+            println!("{}", HELP_MESSAGE.replace("%path", zeroarg.unwrap()).replace("%prefix", cmd_prefix));
         }
         _ => {
-            println!("{}", HELP_MESSAGE.replace("%path", zeroarg.unwrap()));
+            println!("{}", HELP_MESSAGE.replace("%path", zeroarg.unwrap()).replace("%prefix", cmd_prefix));
         }
     }
     Ok(())
