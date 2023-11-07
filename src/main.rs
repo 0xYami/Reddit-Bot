@@ -6,17 +6,16 @@ use std::env;
 // Import a yml parser
 use serde_yaml;
 
+const HELP_MESSAGE: &str = "Usage: %path -- [pretty|raw|help]";
+
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
     let args: Vec<_> = env::args().collect();
     let client = reqwest::Client::new();
 
-    let config = std::fs::File::open("config.yml")
-        .expect("Error opening config.yml");
+    let config = std::fs::File::open("config.yml").expect("Error opening config.yml");
 
-    let config: serde_yaml::Value = serde_yaml::from_reader(config)
-
-        .expect("Error parsing config.yml");
+    let config: serde_yaml::Value = serde_yaml::from_reader(config).expect("Error parsing config.yml");
 
     let url = config["url"].as_str().unwrap();
 
@@ -30,19 +29,28 @@ async fn main() -> Result<(), reqwest::Error> {
     let content = response.text().await?;
 
     let json = to_json(content);
-    
-     let pretty_print_data = args.get(1).map(|arg| arg == "pretty").unwrap_or(false);
 
-    if pretty_print_data {
-        let mut i = 0;
+    let zeroarg = args.get(0).map(|arg| arg.as_str());
 
-        for post in json["data"]["children"].as_array().unwrap() {
-            println!("Post #{}", i);
-            println!("{:#?}", get_post_data(&post["data"]));
-            i += 1;
+    match args.get(1).map(|arg| arg.as_str()) {
+        Some("--pretty") => {
+            let mut i = 1;
+
+            for post in json["data"]["children"].as_array().unwrap() {
+                println!("Post #{}", i);
+                println!("{:#?}", get_post_data(&post["data"]));
+                i += 1;
+            }
         }
-    } else {
-        println!("{:#?}", json);
+        Some("--raw") => {
+            println!("{:#?}", json);
+        }
+        Some("--help")  => {
+            println!("{}", HELP_MESSAGE.replace("%path", zeroarg.unwrap()));
+        }
+        _ => {
+            println!("{}", HELP_MESSAGE.replace("%path", zeroarg.unwrap()));
+        }
     }
     Ok(())
 }
