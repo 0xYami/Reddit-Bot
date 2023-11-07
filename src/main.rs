@@ -1,8 +1,8 @@
 use reqwest;
-use serde_json;
-use serde_json::json;
 use std::env;
 use serde_yaml;
+
+mod libs;
 
 const ILLEGAL_CHARS: [&str; 8] = [
     "!",
@@ -28,16 +28,17 @@ async fn main() -> Result<(), reqwest::Error> {
 
     let url = config["url"].as_str().unwrap();
     let cmd_prefix = config["cmd_prefix"].as_str().unwrap();
+    let user_agent = config["user_agent"].as_str().unwrap();
     
     let response = client
         .get(url)
-        .header("User-Agent", "HackedRedditClient/0.1")
+        .header("User-Agent", user_agent)
         .send()
         .await?;
 
     let content = response.text().await?;
 
-    let json = to_json(content);
+    let json = libs::to_json::parse(content);
 
     let zeroarg = args.get(0).map(|s| s.as_str());
 
@@ -54,11 +55,14 @@ async fn main() -> Result<(), reqwest::Error> {
 
     match args.get(1).as_deref() {
         Some(cmd) if cmd == &format!("{}pretty", cmd_prefix) => {
+            // Create a var for type (User, Home, Subreddit)
+
+            let types = vec!["User", "Home", "Subreddit"];
             let mut i = 1;
             for post in json["data"]["children"].as_array().unwrap() {
                 println!("Post #{}", i);
                 println!();
-                println!("{:#?}", get_post_data(&post["data"]));
+                println!("{:#?}", libs::get_post_data::format(&post["data"]));
                 println!();
                 i += 1;
             }
@@ -76,40 +80,3 @@ async fn main() -> Result<(), reqwest::Error> {
     Ok(())
 }
 
-fn to_json(string: String) -> serde_json::Value {
-    let v: serde_json::Value = serde_json::from_str(&string).unwrap();
-
-    return v;
-}
-
-fn get_post_data(post: &serde_json::Value) -> serde_json::Value {
-    let title = &post["title"];
-    let downvotes = &post["downs"];
-    let upvotes = &post["ups"];
-    let upvote_ratio = &post["upvote_ratio"];
-    let total_awards_received = &post["total_awards_received"];
-    let num_comments = &post["num_comments"];
-    let score = &post["score"];
-    let permalink = &post["permalink"];
-    let author = &post["author"];
-    let subreddit_name_prefixed = &post["subreddit_name_prefixed"];
-    let subscriber_count = &post["subreddit_subscribers"];
-    let created_utc = &post["created_utc"];
-
-    let post_data = json!({
-        "title": title,
-        "downvotes": downvotes,
-        "upvotes": upvotes,
-        "upvote_ratio": upvote_ratio,
-        "total_awards_received": total_awards_received,
-        "num_comments": num_comments,
-        "score": score,
-        "permalink": permalink,
-        "author": author,
-        "subreddit_name_prefixed": subreddit_name_prefixed,
-        "subscriber_count": subscriber_count,
-        "created_utc": created_utc
-    });
-    
-    return post_data;
-}
