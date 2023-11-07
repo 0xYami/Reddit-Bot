@@ -3,13 +3,26 @@ use serde_json;
 use serde_json::json;
 use std::env;
 
+// Import a yml parser
+use serde_yaml;
+
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
     let args: Vec<_> = env::args().collect();
     let client = reqwest::Client::new();
+
+    let config = std::fs::File::open("config.yml")
+        .expect("Error opening config.yml");
+
+    let config: serde_yaml::Value = serde_yaml::from_reader(config)
+
+        .expect("Error parsing config.yml");
+
+    let url = config["url"].as_str().unwrap();
+
     
     let response = client
-        .get("https://www.reddit.com/.api")
+        .get(url)
         .header("User-Agent", "HackedRedditClient/0.1")
         .send()
         .await?;
