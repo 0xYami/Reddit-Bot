@@ -55,9 +55,6 @@ async fn main() -> Result<(), reqwest::Error> {
 
     match args.get(1).as_deref() {
         Some(cmd) if cmd == &format!("{}pretty", cmd_prefix) => {
-            // Create a var for type (User, Home, Subreddit)
-
-            let types = vec!["User", "Home", "Subreddit"];
             let mut i = 1;
             for post in json["data"]["children"].as_array().unwrap() {
                 println!("Post #{}", i);
