@@ -1,3 +1,4 @@
 url: "https://www.reddit.com/.api"
 cmd_prefix: "@"
-user_agent: "HackedRedditClient/0.1(git.hylia.dev/Reddit-Hack)"
+user_agent: "HackedRedditClient/{version}(git.hylia.dev/Reddit-Hack)"
+version: "1.0.5"
