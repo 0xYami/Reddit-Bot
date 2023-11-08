@@ -1,6 +1,7 @@
 use serde_json;
 use serde_json::json;
 
+/** https://github.com/withervt/Reddit-Bot/wiki/Parsing-Data */
 pub fn format(post: &serde_json::Value) -> serde_json::Value {
     let title = &post["title"];
     let downvotes = &post["downs"];

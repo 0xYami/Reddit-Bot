@@ -19,6 +19,9 @@ const HELP_MESSAGE: &str = "Usage: %path %prefix [pretty|raw|help|version|github
 
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
+
+    /* https://github.com/withervt/Reddit-Bot/wiki/Command-Line-Arguments */
+
     let args: Vec<_> = env::args().collect();
     let client = reqwest::Client::new();
 
